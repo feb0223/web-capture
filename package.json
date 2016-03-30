@@ -1,0 +1,13 @@
+{
+  "name": "common-gulp-capture",
+  "version": "0.0.0",
+  "author": "",
+  "description": "common-gulp-capture",
+  "main": "index.js",
+  "dependencies": {
+    "async": "^2.0.0-rc.2",
+    "gulp-util": "^3.0.7",
+    "rimraf": "^2.5.2",
+    "webshot": "^0.18.0"
+  }
+}

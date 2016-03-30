@@ -1,0 +1,14 @@
+# Intellij
+*.iml
+*.ipr
+*.iws
+.idea/
+
+# Mac
+.DS_Store
+
+# Grunt, Gulp
+node_modules
+
+# Bower
+bower_components

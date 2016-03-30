@@ -1,0 +1,223 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="utf-8">
+<title></title>
+</head>
+<style>
+  body {
+    margin: 0;
+    background-color: rgba(45, 140, 60, 0.1);
+  }
+  p { margin: 0; }
+  ul { margin: 0; padding: 0; }
+  li { list-style: none; }
+  .navigation {
+    padding: 10px 20px;
+  }
+  .select-ratio {
+    position: relative;
+    top: -3px;
+  }
+  .image-row {
+  
+  }
+  .image-row::after {
+    display: block;
+    clear: both;
+    content: "";
+  }
+  .image-item {
+    float: left;
+    margin-left: 20px;
+    margin-bottom: 20px;
+  }
+  .image-title {
+    word-wrap: break-word;
+    margin-bottom: 6px;
+  }
+  .image-wrap {
+    background-color: #fff;
+    line-height: 0;
+    border: 1px solid;
+  }
+  .image-wrap img {
+    width: 100%;
+    cursor: pointer;
+  }
+
+</style>
+<body>
+<nav class="navigation">
+  <span class="ratio-label">表示倍率：</span>
+  <select class="select-ratio">
+    <option value="1">100%</option>
+    <option value="0.9">90%</option>
+    <option value="0.8">80%</option>
+    <option value="0.7">70%</option>
+    <option value="0.6">60%</option>
+    <option value="0.5">50%</option>
+    <option value="0.4">40%</option>
+    <option value="0.3">30%</option>
+    <option value="0.2">20%</option>
+    <option value="0.1">10%</option>
+  </select>
+</nav>
+<div class="image-list">
+
+</div>
+
+<script src="https://ajax.googleapis.com/ajax/libs/jquery/2.1.3/jquery.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/lodash.js/3.7.0/lodash.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/async/1.3.0/async.min.js"></script>
+<script src="./captureInfoList.js"></script>
+
+<script class="template-item" type="text/template">
+  <li class="image-item">
+    <p class="image-title"><%= info.title %></p>
+    <div class="image-wrap">
+      <img src="./<%= version %>/<%= info.fileName %>.png" />
+    </div>
+  </li>
+</script>
+
+<script>
+(function() {
+  
+  var CaptureIndex = (function() {
+    
+    var itemMargin = 20;
+    var itemBorder = 2;
+    var ITEM_WIDTH_RATIO = 0.8;
+    
+    /**
+     * @constructor
+     */
+    function CaptureIndex() {
+      var self = this;
+      
+      this.$imageList = $('.image-list');
+      this.itemWidthRatio = getItemWidthRatio();
+      
+      this.initEvents();
+      
+      loadImages(window.pathVersion, window.captureInfoList, function(images) {
+        self.images = images;
+        self.currentColumn = self.getColumn();
+        self.render();
+      });
+    }
+    
+    var cls = CaptureIndex.prototype;
+    
+    var template = {
+      item: _.template($('.template-item').html())
+    };
+    
+    function getItemWidthRatio() {
+      var ratio = window.sessionStorage.getItem('itemWidthRatio');
+      if (ratio) {
+        ratio = Number(ratio);
+      }
+      return ratio || ITEM_WIDTH_RATIO;
+    }
+    
+    function getImagePath(version, path) {
+      return './' + version + '/' + path + '.png';
+    }
+    
+    function heredoc(func) {
+    	return func.toString().match(/[^]*\/\*([^]*)\*\/\}$/)[1].replace(/[\t]/g, '');
+    }
+    
+    function loadImages(version, captureInfoList, callback) {
+      var images = [];
+      async.each(captureInfoList, function(info, next) {
+        var image = new Image();
+        image.src = getImagePath(version, info.fileName);
+        image.onload = function() {
+          next();
+        };
+        images.push(image);
+      }, function() {
+        callback(images);
+      });
+    }
+    
+    cls.getColumn = function () {
+      var winWidth = window.innerWidth;
+      
+      var column = 0;
+      var width = 0;
+      for (var i=0; i < this.images.length; i++) {
+        width += Math.round(this.images[i].width * this.itemWidthRatio) + itemMargin + itemBorder;
+        
+        if (width > winWidth) {
+          break;
+        }
+        
+        column++;
+      }
+      
+      if (!column) {
+        column = 1;
+      }
+      
+      return column;
+    };
+    
+    cls.initEvents = function() {
+      var self = this;
+      
+      var $win = $(window);
+      
+      $win.on('resize', function() {
+        var column = self.getColumn();
+        if (self.currentColumn != column) {
+          self.$imageList.empty();
+          self.currentColumn = column;
+          self.render();
+        }
+      });
+      
+      $('.select-ratio').change(function(event, ratio) {
+        var val = (ratio) ? ratio : $(this).val();
+        self.itemWidthRatio = Number(val);
+        window.sessionStorage.setItem('itemWidthRatio', self.itemWidthRatio);
+        self.$imageList.empty();
+        self.currentColumn = self.getColumn();
+        self.render();
+      });
+      $('.select-ratio option[value="' + self.itemWidthRatio + '"]').prop('selected',true);
+    };
+    
+    cls.render = function() {
+      var $ul;
+      for (var i=0; i < window.captureInfoList.length; i++) {
+        var info = window.captureInfoList[i];
+        var image = this.images[i];
+        var imageWidth = Math.round(image.width * this.itemWidthRatio);
+        
+        if (i % this.currentColumn === 0) {
+          $ul = $('<ul/>').addClass('image-row');
+          this.$imageList.append($ul);
+        }
+        var $item = $(template.item({version: window.pathVersion, info: info})).css({width: imageWidth});
+        $item.find('img').click(function() {
+          window.open($(this).attr('src'));
+        });
+        $ul.append($item);
+      }
+    };
+    
+    return CaptureIndex;
+  })();
+  
+  $(function() {
+    new CaptureIndex();
+  });
+})();
+</script>
+
+</body>
+</html>
