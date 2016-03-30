@@ -1,10 +1,10 @@
 var path = require('path');
 var fs = require('fs');
 
-var gutil = require('gulp-util');
 var async = require('async');
 var rimraf = require('rimraf');
 var webshot = require('webshot');
+var chalk = require('chalk');
 
 const USER_AGENT = {
 	ios8: 'Mozilla/5.0 (iPhone; CPU iPhone OS 8_2 like Mac OS X) AppleWebKit/600.1.4 (KHTML, like Gecko) Version/8.0 Mobile/12D508 Safari/600.1.4',
@@ -21,63 +21,62 @@ const USER_AGENT = {
 
 var templatePath = path.join(__dirname, './template/capture_index.html');
 
-module.exports = function(config, option) {
-	option = option || {};
-	
-	if (!config.viewport) {
-		config.viewport = {
-			width: 320,
-			height: 480
+module.exports = function(config, callback) {
+	if (!config.screenSize) {
+		config.screenSize = {
+			width: 1100,
+			height: 900
 		};
 	}
 	
+	var timestamp = (new Date()).getTime().toString();
+	var html = fs.readFileSync(templatePath);
 	
-	return function(done) {
-		var timestamp = (new Date()).getTime().toString();
-		var html = fs.readFileSync(templatePath);
-		
-		var urlInfoList = config.urlList.map(function(urlInfo) {
+	var urlInfoList = config.urlList.map(function(urlInfo) {
+		if (urlInfo.path) {
 			urlInfo.url = path.join(config.baseUrl, urlInfo.path);
-			return urlInfo;
-		});
-		
-		var shotOptions = {
-			screenSize: config.viewport,
-			shotSize: {
-				width: config.viewport.width,
-				height: 'all'
-			},
-			userAgent: USER_AGENT[config.useragent]
-		};
-		
-		if (config.wait) {
-			shotOptions.renderDelay = config.wait;
 		}
-		
-		rimraf(config.destDir, function() {
-			var cnt = 0;
-			async.eachSeries(urlInfoList, function(urlInfo, next) {
-				cnt++;
-				urlInfo.fileName = (new Date()).getTime().toString();
-				
-				var imagePath = path.join(config.destDir, timestamp, urlInfo.fileName + '.png');
-				webshot(urlInfo.url, imagePath, shotOptions, function(err) {
-					if (err) {
-						gutil.log(gutil.colors.red('[ERROR] capture', JSON.stringify(err, null, "\t")));
-					}
-					gutil.log('[INFO] Captured', urlInfo.url, '=>', imagePath);
-					next();
-				});
-				
-				
-			}, function() {
-				var json = 'window.captureInfoList=' + JSON.stringify(urlInfoList) + ';window.pathVersion=' + timestamp;
-				fs.writeFileSync(path.join(config.destDir, 'captureInfoList.js'), json);
-				var html = fs.readFileSync(templatePath);
-				fs.writeFileSync(path.join(config.destDir, 'index.html'), html);
-				done();
-				//process.exit(0);
-			});
-		});
+		return urlInfo;
+	});
+	
+	var shotOptions = {
+		screenSize: config.screenSize,
+		shotSize: {
+			width: config.screenSize.width,
+			height: 'all'
+		}
 	};
+	
+	if (config.userAgent) {
+		shotOptions.userAgent = USER_AGENT.hasOwnProperty(config.userAgent) ? USER_AGENT[config.userAgent] : config.userAgent
+	}
+	
+	if (config.wait) {
+		shotOptions.renderDelay = config.wait;
+	}
+	
+	rimraf(config.destDir, function() {
+		var cnt = 0;
+		async.eachSeries(urlInfoList, function(urlInfo, next) {
+			cnt++;
+			urlInfo.fileName = (new Date()).getTime().toString();
+			
+			var imagePath = path.join(config.destDir, timestamp, urlInfo.fileName + '.png');
+			webshot(urlInfo.url, imagePath, shotOptions, function(err) {
+				if (err) {
+					console.log(chalk.red('[ERROR] capture', JSON.stringify(err, null, "\t")));
+				}
+				console.log('[INFO] Captured', urlInfo.url, '=>', imagePath);
+				next();
+			});
+			
+			
+		}, function() {
+			var json = 'window.captureInfoList=' + JSON.stringify(urlInfoList) + ';window.pathVersion=' + timestamp;
+			fs.writeFileSync(path.join(config.destDir, 'captureInfoList.js'), json);
+			var html = fs.readFileSync(templatePath);
+			fs.writeFileSync(path.join(config.destDir, 'index.html'), html);
+			callback();
+		});
+	});
 };
