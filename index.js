@@ -64,7 +64,7 @@ module.exports = function(config, callback) {
 			var imagePath = path.join(config.destDir, timestamp, urlInfo.fileName + '.png');
 			webshot(urlInfo.url, imagePath, shotOptions, function(err) {
 				if (err) {
-					console.log(chalk.red('[ERROR] capture', JSON.stringify(err, null, "\t")));
+					console.log(chalk.red('[ERROR] capture', err));
 				}
 				console.log('[INFO] Captured', urlInfo.url, '=>', imagePath);
 				next();
