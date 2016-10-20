@@ -1,8 +1,7 @@
 var path = require('path');
-var fs = require('fs');
 
+var fs = require('fs-extra');
 var async = require('async');
-var rimraf = require('rimraf');
 var webshot = require('webshot');
 var chalk = require('chalk');
 
@@ -34,7 +33,7 @@ module.exports = function(config, callback) {
 	
 	var urlInfoList = config.urlList.map(function(urlInfo) {
 		if (urlInfo.path) {
-			urlInfo.url = path.join(config.baseUrl, urlInfo.path);
+			urlInfo.url = config.baseUrl + (urlInfo.path === '/' ? '' : urlInfo.path);
 		}
 		return urlInfo;
 	});
@@ -55,28 +54,31 @@ module.exports = function(config, callback) {
 		shotOptions.renderDelay = config.wait;
 	}
 	
-	rimraf(config.destDir, function() {
-		var cnt = 0;
-		async.eachSeries(urlInfoList, function(urlInfo, next) {
-			cnt++;
-			urlInfo.fileName = (new Date()).getTime().toString();
-			
-			var imagePath = path.join(config.destDir, timestamp, urlInfo.fileName + '.png');
-			webshot(urlInfo.url, imagePath, shotOptions, function(err) {
-				if (err) {
-					console.log(chalk.red('[ERROR] capture', err));
-				}
-				console.log('[INFO] Captured', urlInfo.url, '=>', imagePath);
-				next();
-			});
-			
-			
-		}, function() {
-			var json = 'window.captureInfoList=' + JSON.stringify(urlInfoList) + ';window.pathVersion=' + timestamp;
-			fs.writeFileSync(path.join(config.destDir, 'captureInfoList.js'), json);
-			var html = fs.readFileSync(templatePath);
-			fs.writeFileSync(path.join(config.destDir, 'index.html'), html);
-			callback();
+	shotOptions.onResourceRequested = function() {
+		system.stdout.write('onLoadFinished');
+	};
+	
+	fs.removeSync(config.destDir);
+	//fs.mkdirsSync(config.destDir);
+	
+	var cnt = 0;
+	async.eachSeries(urlInfoList, function(urlInfo, next) {
+		cnt++;
+		urlInfo.fileName = (new Date()).getTime().toString();
+		
+		var imagePath = path.join(config.destDir, timestamp, urlInfo.fileName + '.png');
+		webshot(urlInfo.url, imagePath, shotOptions, function(err) {
+			if (err) {
+				console.log(chalk.red('[ERROR] capture', err));
+			}
+			console.log('[INFO] Captured', urlInfo.url, '=>', imagePath);
+			next();
 		});
+	}, function() {
+		var json = 'window.captureInfoList=' + JSON.stringify(urlInfoList) + ';window.pathVersion=' + timestamp;
+		fs.writeFileSync(path.join(config.destDir, 'captureInfoList.js'), json);
+		var html = fs.readFileSync(templatePath);
+		fs.writeFileSync(path.join(config.destDir, 'index.html'), html);
+		callback();
 	});
 };
