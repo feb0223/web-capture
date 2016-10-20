@@ -59,7 +59,7 @@ module.exports = function(config, callback) {
 	};
 	
 	fs.removeSync(config.destDir);
-	//fs.mkdirsSync(config.destDir);
+	fs.mkdirsSync(config.destDir);
 	
 	var cnt = 0;
 	async.eachSeries(urlInfoList, function(urlInfo, next) {
