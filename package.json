@@ -1,7 +1,7 @@
 {
   "name": "web-capture",
-  "version": "0.0.0",
-  "author": "",
+  "version": "0.0.2",
+  "author": "kawaguchi_kazuya",
   "description": "web-capture",
   "main": "index.js",
   "dependencies": {
