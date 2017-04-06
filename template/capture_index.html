@@ -20,7 +20,7 @@
     top: -3px;
   }
   .image-row {
-  
+
   }
   .image-row::after {
     display: block;
@@ -34,7 +34,7 @@
   }
   .image-title {
     word-wrap: break-word;
-    margin-bottom: 6px;
+    margin-bottom: 4px;
   }
   .image-wrap {
     background-color: #fff;
@@ -44,6 +44,11 @@
   .image-wrap img {
     width: 100%;
     cursor: pointer;
+  }
+  .url {
+    font-size: 12px;
+    margin-bottom: 4px;
+    color: #777;
   }
 
 </style>
@@ -74,7 +79,8 @@
 
 <script class="template-item" type="text/template">
   <li class="image-item">
-    <p class="image-title"><%= info.title %></p>
+    <p class="image-title"><%= info.title %> <span class="url"><%= info.path %></span></p>
+
     <div class="image-wrap">
       <img src="./<%= version %>/<%= info.fileName %>.png" />
     </div>
@@ -83,37 +89,37 @@
 
 <script>
 (function() {
-  
+
   var CaptureIndex = (function() {
-    
+
     var itemMargin = 20;
     var itemBorder = 2;
     var ITEM_WIDTH_RATIO = 0.8;
-    
+
     /**
      * @constructor
      */
     function CaptureIndex() {
       var self = this;
-      
+
       this.$imageList = $('.image-list');
       this.itemWidthRatio = getItemWidthRatio();
-      
+
       this.initEvents();
-      
+
       loadImages(window.pathVersion, window.captureInfoList, function(images) {
         self.images = images;
         self.currentColumn = self.getColumn();
         self.render();
       });
     }
-    
+
     var cls = CaptureIndex.prototype;
-    
+
     var template = {
       item: _.template($('.template-item').html())
     };
-    
+
     function getItemWidthRatio() {
       var ratio = window.sessionStorage.getItem('itemWidthRatio');
       if (ratio) {
@@ -121,15 +127,15 @@
       }
       return ratio || ITEM_WIDTH_RATIO;
     }
-    
+
     function getImagePath(version, path) {
       return './' + version + '/' + path + '.png';
     }
-    
+
     function heredoc(func) {
     	return func.toString().match(/[^]*\/\*([^]*)\*\/\}$/)[1].replace(/[\t]/g, '');
     }
-    
+
     function loadImages(version, captureInfoList, callback) {
       var images = [];
       async.each(captureInfoList, function(info, next) {
@@ -143,34 +149,34 @@
         callback(images);
       });
     }
-    
+
     cls.getColumn = function () {
       var winWidth = window.innerWidth;
-      
+
       var column = 0;
       var width = 0;
       for (var i=0; i < this.images.length; i++) {
         width += Math.round(this.images[i].width * this.itemWidthRatio) + itemMargin + itemBorder;
-        
+
         if (width > winWidth) {
           break;
         }
-        
+
         column++;
       }
-      
+
       if (!column) {
         column = 1;
       }
-      
+
       return column;
     };
-    
+
     cls.initEvents = function() {
       var self = this;
-      
+
       var $win = $(window);
-      
+
       $win.on('resize', function() {
         var column = self.getColumn();
         if (self.currentColumn != column) {
@@ -179,7 +185,7 @@
           self.render();
         }
       });
-      
+
       $('.select-ratio').change(function(event, ratio) {
         var val = (ratio) ? ratio : $(this).val();
         self.itemWidthRatio = Number(val);
@@ -190,14 +196,14 @@
       });
       $('.select-ratio option[value="' + self.itemWidthRatio + '"]').prop('selected',true);
     };
-    
+
     cls.render = function() {
       var $ul;
       for (var i=0; i < window.captureInfoList.length; i++) {
         var info = window.captureInfoList[i];
         var image = this.images[i];
         var imageWidth = Math.round(image.width * this.itemWidthRatio);
-        
+
         if (i % this.currentColumn === 0) {
           $ul = $('<ul/>').addClass('image-row');
           this.$imageList.append($ul);
@@ -209,10 +215,10 @@
         $ul.append($item);
       }
     };
-    
+
     return CaptureIndex;
   })();
-  
+
   $(function() {
     new CaptureIndex();
   });
