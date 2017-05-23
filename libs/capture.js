@@ -50,7 +50,7 @@ module.exports = function(url, imagePath, options, callback) {
     // 	console.log(data[key]);
     // 	str += data[key];
     // });
-    console.log('[data]', data.toString('utf8'));
+    console.log(data.toString('utf8').replace(/\n+$/g,''));
   });
 
   phantomProc.stderr.on('data', function(data) {

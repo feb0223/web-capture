@@ -4,7 +4,7 @@
   const fs = require('fs');
 
   const url = system.args[1];
-  const imagePath = system.args[2];
+  const filePath = system.args[2];
   const options = JSON.parse(system.args[3]);
 
   const json = {
@@ -68,11 +68,10 @@
 
     // wait
     setTimeout(function() {
-      page.render(imagePath);
-      var basePath = imagePath.match(/(.+?\.)([\w]+)/)[1];
+      page.render(filePath + '.png');
       var content = page.content;
-      fs.write(basePath + 'html', content, 'w');
-      fs.write(basePath + 'json', JSON.stringify(json), 'w');
+      fs.write(filePath + '.html', content, 'w');
+      fs.write(filePath + '.json', JSON.stringify(json), 'w');
       page.close();
       phantom.exit();
     }, options.wait);

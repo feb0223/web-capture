@@ -34,12 +34,12 @@
   }
   .image-title {
     word-wrap: break-word;
-    margin-bottom: 4px;
   }
   .image-wrap {
     background-color: #fff;
     line-height: 0;
     border: 1px solid;
+    margin-top: 4px;
   }
   .image-wrap img {
     width: 100%;
@@ -47,8 +47,10 @@
   }
   .url {
     font-size: 12px;
-    margin-bottom: 4px;
     color: #777;
+  }
+  .error {
+    color: #f00;
   }
 
 </style>
@@ -80,7 +82,7 @@
 <script class="template-item" type="text/template">
   <li class="image-item">
     <p class="image-title"><%= info.title %> <span class="url"><%= info.path %></span></p>
-
+    <p class="error"><%= info.captureInfo.errors %></p>
     <div class="image-wrap">
       <img src="./<%= version %>/<%= info.fileName %>.png" />
     </div>
