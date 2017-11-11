@@ -51,7 +51,9 @@ module.exports = function(config, callback) {
     customHeaders: config.customHeaders,
     storage: config.storage,
     session: config.session,
-    cookie: config.cookie
+    cookie: config.cookie,
+    evaluateJavaScript: config.evaluateJavaScript ? config.evaluateJavaScript.toString() : null,
+    injectJs: config.injectJs,
   };
 
   if (config.wait) {

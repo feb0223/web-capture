@@ -32,14 +32,21 @@
     return page;
   }
 
-
   if (options.cookie) {
     phantom.clearCookies();
     phantom.addCookie(options.cookie);
   }
 
-
   const page = createPage(options);
+
+  page.onInitialized = function() {
+    if (options.injectJs) {
+      page.injectJs(options.injectJs);
+    }
+    if (options.evaluateJavaScript) {
+      page.evaluateJavaScript(options.evaluateJavaScript);
+    }
+  };
 
   page.open(url, function(status) {
     console.log('status:', status);
@@ -76,6 +83,14 @@
       phantom.exit();
     }, options.wait);
   });
+
+  // page.onConsoleMessage = function(msg, lineNum, sourceId) {
+  //   console.log('CONSOLE: ' + msg + ' (from line #' + lineNum + ' in "' + sourceId + '")');
+  // };
+  //
+  // page.onResourceRequested = function(requestData, networkRequest) {
+  //   console.log(requestData.url);
+  // };
 
   page.onError = function(msg, trace) {
     var msgStack = ['ERROR: ' + msg];
