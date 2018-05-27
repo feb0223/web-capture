@@ -1,6 +1,6 @@
 {
   "name": "web-capture",
-  "version": "0.1.1",
+  "version": "0.2.0",
   "author": "goodtea0223@gmail.com",
   "description": "web-capture",
   "main": "index.js",
@@ -13,8 +13,5 @@
     "cross-spawn": "^5.0.1",
     "fs-extra": "^0.30.0",
     "puppeteer": "^1.4.0"
-  },
-  "optionalDependencies": {
-    "phantomjs-prebuilt": "^2.1.14"
   }
 }
