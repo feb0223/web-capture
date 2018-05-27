@@ -72,12 +72,12 @@ module.exports = function(config, callback) {
       urlInfo.fileName = (new Date()).getTime().toString();
 
       const filePath = path.join(config.destDir, timestamp, urlInfo.fileName);
-      capture(urlInfo.url, filePath, options, function(err) {
+      capture(urlInfo.url, filePath, options, function(err, pageInfo) {
         if (err) {
           console.log(chalk.red('[ERROR] capture', err));
         }
         console.log('[INFO] Captured', urlInfo.url, '=>', filePath + '.png\n');
-        urlInfo.captureInfo = JSON.parse(fs.readFileSync(filePath + '.json'));
+        urlInfo.captureInfo = pageInfo;
         next();
       });
     }, function() {

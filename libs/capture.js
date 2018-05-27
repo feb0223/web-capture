@@ -1,8 +1,7 @@
-var spawn = require('cross-spawn');
-var path = require('path');
-var phantomScript = path.join(__dirname, '../capture.phantom.js');
-var phantomjs = require('phantomjs-prebuilt');
-var binPath = phantomjs.path;
+const path = require('path');
+const fs = require('fs');
+
+const puppeteer = require('puppeteer');
 
 /**
  * @param {String} url
@@ -16,14 +15,9 @@ var binPath = phantomjs.path;
  *
  * @param {Object}  options.settings
  * @param {Boolean} options.settings.javascriptEnabled
- * @param {Boolean} options.settings.loadImages
- * @param {Boolean} options.settings.localToRemoteUrlAccessEnabled
  * @param {String}  options.settings.userAgent
  * @param {Boolean} options.settings.userName
  * @param {Boolean} options.settings.password
- * @param {Boolean} options.settings.XSSAuditingEnabled
- * @param {Boolean} options.settings.webSecurityEnabled
- * @param {Boolean} options.settings.resourceTimeout
  *
  * @param {Object}  options.customHeaders
  *
@@ -38,27 +32,71 @@ var binPath = phantomjs.path;
  * @param {Function} callback
  */
 module.exports = function(url, imagePath, options, callback) {
-  var phantomArgs = [phantomScript, url, imagePath, JSON.stringify(options)];
-  // console.log('binPath', binPath);
-  // console.log('phantomArgs', phantomArgs);
-  var phantomProc = spawn(binPath, phantomArgs);
+  const newImagePath = `${imagePath}.png`;
 
-  phantomProc.stdout.setEncoding('utf-8');
-  phantomProc.stdout.on('data', function(data) {
-    // var str = '';
-    // Object.keys(data).forEach(function(key) {
-    // 	console.log(data[key]);
-    // 	str += data[key];
-    // });
-    console.log(data.toString('utf8').replace(/\n+$/g,''));
-  });
+  // create directory
+  if (!fs.existsSync(path.dirname(newImagePath))){
+      fs.mkdirSync(path.dirname(newImagePath));
+  }
 
-  phantomProc.stderr.on('data', function(data) {
-    console.log('[error]', data.toString('utf8'));
-  });
+  (async () => {
+    const browser = await puppeteer.launch();
+    const page = await browser.newPage();
 
-  phantomProc.on('exit', function(code) {
-    // console.log('[exit]', code);
-    callback();
-  });
+    const { settings } = options;
+
+    if (options.viewportSize) {
+      page.setViewport(options.viewportSize);
+    }
+
+    if (settings.javascriptEnabled === false) {
+      page.setJavaScriptEnabled(false);
+    }
+    if (settings.userAgent) {
+      page.setUserAgent(options.settings.userAgent);
+    }
+    if (settings.userName && settings.password) {
+      page.setExtraHTTPHeaders({
+        Authorization: `Basic ${new Buffer(`${settings.userName}:${settings.password}`).toString('base64')}`
+      });
+    }
+
+    const pageInfo = {
+      errors: [],
+      resourceErrors: []
+    };
+
+    page.on('error', error => {
+      // pageInfo.errors.push(error.message);
+      pageInfo.errors.push(error.stack.trim());
+    });
+    page.on('pageerror', error => {
+      // pageInfo.errors.push(error.message);
+      pageInfo.errors.push(error.stack.trim());
+    });
+    page.on('console', message => {
+      if (message.type() === 'error') {
+        pageInfo.errors.push(message.text().trim());
+      }
+    });
+    page.on('response', res => {
+      if (!res.ok()) {
+        pageInfo.resourceErrors.push(`${res.status()} ${res.url()}`);
+      }
+    });
+
+    await page.goto(url);
+
+    await page.waitFor(options.wait);
+
+    await page.screenshot({
+      path: newImagePath,
+      type: 'png',
+      fullPage: true,
+    });
+
+    await browser.close();
+
+    callback(null, pageInfo);
+  })();
 };

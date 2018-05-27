@@ -49,8 +49,56 @@
     font-size: 12px;
     color: #777;
   }
+
+  .error-wrap {
+    position: relative;
+  }
   .error {
     color: #f00;
+    white-space: pre-wrap;
+  }
+
+  .more-button {
+    display: block;
+    position: absolute;
+    left: 50%;
+    bottom: 10%;
+    transform: translateX(-50%);
+    padding: 4px 16px;
+    background-color: #ddd;
+    font-size: 14px;
+    border: 1px solid #aaa;
+    border-radius: 20px;
+    text-align: center;
+    cursor: pointer;
+  }
+  .grad-item {
+    position: relative;
+    overflow: hidden;
+    height: 80px;
+  }
+  .grad-item::before {
+    display: block;
+    position: absolute;
+    bottom: 0;
+    left: 0;
+    width: 100%;
+    height: 40px;
+    background: -webkit-linear-gradient(top, rgba(255,255,255,0) 0%, rgba(255,255,255,0.9) 50%, rgba(255,255,255,0.9) 50%, #fff 100%);
+    background: linear-gradient(top, rgba(255,255,255,0) 0%, rgba(255,255,255,0.9) 50%, rgba(255,255,255,0.9) 50%, #fff 100%);
+    content: "";
+  }
+  .grad-trigger {
+    display: none;
+  }
+  .grad-trigger:checked ~ .more-button {
+    display: none;
+  }
+  .grad-trigger:checked ~ .grad-item {
+    height: auto;
+  }
+  .grad-trigger:checked ~ .grad-item::before {
+    display: none;
   }
 
 </style>
@@ -82,7 +130,16 @@
 <script class="template-item" type="text/template">
   <li class="image-item">
     <p class="image-title"><%= info.title %> <span class="url"><%= info.path %></span></p>
-    <p class="error"><%= info.captureInfo.errors %></p>
+    <% if (info.captureInfo.errors.length || info.captureInfo.resourceErrors.length) { %>
+      <div class="error-wrap">
+        <input id="trigger<%= index %>" class="grad-trigger" type="checkbox">
+        <div class="grad-item error">
+<%= info.captureInfo.errors %>
+<%= info.captureInfo.resourceErrors %>
+        </div>
+        <label class="more-button" for="trigger<%= index %>">more</label>
+      </div>
+    <% } %>
     <div class="image-wrap">
       <img src="./<%= version %>/<%= info.fileName %>.png" />
     </div>
@@ -210,7 +267,11 @@
           $ul = $('<ul/>').addClass('image-row');
           this.$imageList.append($ul);
         }
-        var $item = $(template.item({version: window.pathVersion, info: info})).css({width: imageWidth});
+        var $item = $(template.item({
+          version: window.pathVersion,
+          info: info,
+          index: i,
+        })).css({width: imageWidth});
         $item.find('img').click(function() {
           window.open($(this).attr('src'));
         });
