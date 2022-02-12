@@ -4,7 +4,7 @@ const async = require('async');
 const chalk = require('chalk');
 
 const capture = require('./libs/capture');
-const version = require('./libs/version');
+// const version = require('./libs/version');
 const userAgent = require('./libs/userAgent');
 
 const constants = require('./constants');
@@ -63,30 +63,32 @@ module.exports = function(config, callback) {
   fs.removeSync(config.destDir);
   fs.mkdirsSync(config.destDir);
 
+  let cnt = 0;
+  async.eachSeries(urlInfoList, function(urlInfo, next) {
+    cnt++;
+    urlInfo.fileName = (new Date()).getTime().toString();
 
-  version((version) => {
-    console.log(`PhantomJS Version: ${version}\n`);
-    let cnt = 0;
-    async.eachSeries(urlInfoList, function(urlInfo, next) {
-      cnt++;
-      urlInfo.fileName = (new Date()).getTime().toString();
+    const newOptions = { ...options }
 
-      const filePath = path.join(config.destDir, timestamp, urlInfo.fileName);
-      capture(urlInfo.url, filePath, options, function(err, pageInfo) {
-        if (err) {
-          console.log(chalk.red('[ERROR] capture', err));
-        }
-        console.log('[INFO] Captured', urlInfo.url, '=>', filePath + '.png\n');
-        urlInfo.captureInfo = pageInfo;
-        next();
-      });
-    }, function() {
-      const json = 'window.captureInfoList=' + JSON.stringify(urlInfoList) + ';window.pathVersion=' + timestamp;
-      fs.writeFileSync(path.join(config.destDir, 'captureInfoList.js'), json);
-      const html = fs.readFileSync(templatePath);
-      fs.writeFileSync(path.join(config.destDir, 'index.html'), html);
-      callback();
+    if (urlInfo.wait) {
+      newOptions.wait = urlInfo.wait
+    }
+
+    const filePath = path.join(config.destDir, timestamp, urlInfo.fileName);
+    capture(urlInfo.url, filePath, newOptions, function(err, pageInfo) {
+      if (err) {
+        console.log(chalk.red('[ERROR] capture', err));
+      }
+      console.log('[INFO] Captured', urlInfo.url, '=>', filePath + '.png\n');
+      urlInfo.captureInfo = pageInfo;
+      next();
     });
+  }, function() {
+    const json = 'window.captureInfoList=' + JSON.stringify(urlInfoList) + ';window.pathVersion=' + timestamp;
+    fs.writeFileSync(path.join(config.destDir, 'captureInfoList.js'), json);
+    const html = fs.readFileSync(templatePath);
+    fs.writeFileSync(path.join(config.destDir, 'index.html'), html);
+    callback();
   });
 };
 

@@ -87,7 +87,9 @@ module.exports = function(url, imagePath, options, callback) {
 
     await page.goto(url);
 
-    await page.waitFor(options.wait);
+    if (options.wait) {
+      await page.waitForTimeout(options.wait);
+    }
 
     await page.screenshot({
       path: newImagePath,
